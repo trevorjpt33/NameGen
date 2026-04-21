@@ -1,0 +1,10 @@
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/node_modules
+**/.git
+**/Data/Seed/csv
+Dockerfile
+.dockerignore
+README.md
