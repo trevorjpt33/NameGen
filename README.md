@@ -6,8 +6,8 @@ TO-DO: Live Custom Domain
 
 ## Live API
 
-Base URL: `http://namegen-prod.eba-mt2b3zga.us-east-1.elasticbeanstalk.com`  
-Swagger UI: `http://namegen-prod.eba-mt2b3zga.us-east-1.elasticbeanstalk.com/swagger`
+Base URL (TO-DO): `http://namegen-prod.eba-mt2b3zga.us-east-1.elasticbeanstalk.com`  
+Swagger UI (TO-DO): `http://namegen-prod.eba-mt2b3zga.us-east-1.elasticbeanstalk.com/swagger`
 
 ## Features
 
