@@ -11,14 +11,12 @@ public class FictionalNameService : IFictionalNameService
     public Task<FictionalNameResponse> GenerateAsync(FictionalNameRequest request)
     {
         var requestedCount = Math.Min(request.Count, 25);
-        var styleKey = ResolveStyle(request.Style);
+        var styleNormalized = request.Style.ToLower();
         var typeNormalized = request.Type.ToLower();
 
         var rng = request.Seed.HasValue
             ? new Random(request.Seed.Value)
             : new Random();
-
-        var preset = FictionalNamePresets.Presets[styleKey];
 
         var includes      = SplitFilter(request.Includes);
         var excludes      = SplitFilter(request.Excludes);
@@ -34,6 +32,9 @@ public class FictionalNameService : IFictionalNameService
         {
             attempts++;
 
+            var styleKey = ResolveStyle(styleNormalized, rng);
+            var preset = FictionalNamePresets.Presets[styleKey];
+
             string? firstName = null;
             string? lastName = null;
 
@@ -43,7 +44,6 @@ public class FictionalNameService : IFictionalNameService
             if (typeNormalized != "first")
                 lastName = BuildName(preset, rng);
 
-            // Apply per-component filters
             if (firstName != null && !PassesFilters(firstName,
                 request.MinLength, request.MaxLength,
                 includes, excludes, startsWith, notStartsWith,
@@ -60,7 +60,6 @@ public class FictionalNameService : IFictionalNameService
                 ? $"{firstName} {lastName}"
                 : firstName ?? lastName;
 
-            // Apply full name length filters
             if (typeNormalized == "full")
             {
                 if (request.MinFullLength.HasValue && fullName!.Length < request.MinFullLength.Value)
@@ -85,12 +84,12 @@ public class FictionalNameService : IFictionalNameService
 
         return Task.FromResult(new FictionalNameResponse
         {
-            Count         = results.Count,
-            Type          = typeNormalized,
-            Style         = styleKey,
-            Results       = results,
+            Count          = results.Count,
+            Type           = typeNormalized,
+            Style          = styleNormalized,
+            Results        = results,
             FiltersApplied = request,
-            Warning       = warning
+            Warning        = warning
         });
     }
 
@@ -102,13 +101,13 @@ public class FictionalNameService : IFictionalNameService
         return char.ToUpper(prefix[0]) + (prefix[1..] + middle + suffix).ToLower();
     }
 
-    private static string ResolveStyle(string style)
+    private static string ResolveStyle(string style, Random rng)
     {
         var styles = FictionalNamePresets.Presets.Keys.ToList();
-        return style.ToLower() == "random"
-            ? styles[new Random().Next(styles.Count)]
-            : (FictionalNamePresets.Presets.ContainsKey(style.ToLower())
-                ? style.ToLower()
+        return style == "random"
+            ? styles[rng.Next(styles.Count)]
+            : (FictionalNamePresets.Presets.ContainsKey(style)
+                ? style
                 : styles[0]);
     }
 
