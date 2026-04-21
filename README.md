@@ -2,7 +2,7 @@
 TO-DO: Live Custom Domain
 
 ## Overview
-A hybrid name generator REST API built with C# / .NET 8 and deployed on AWS. Generates human names, fictional character names, and gaming usernames using a combination of real datasets, rule-based syllable chaining, and AI enhancement.
+**NameGen** is a hybrid name generator REST API built with C# / .NET 8 and deployed on AWS. Generates human names, fictional character names, and gaming usernames using a combination of real datasets, rule-based syllable chaining, and AI enhancement.
 
 ## Live API
 
