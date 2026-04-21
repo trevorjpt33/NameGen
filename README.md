@@ -9,7 +9,18 @@ A hybrid name generator REST API built with C# / .NET 8 and deployed on AWS. Gen
 Base URL: `http://namegen-prod.eba-mt2b3zga.us-east-1.elasticbeanstalk.com`  
 Swagger UI: `http://namegen-prod.eba-mt2b3zga.us-east-1.elasticbeanstalk.com/swagger`
 
-## Tech Stack
+## Features
+
+What it does:
+
+- Generates *human names* from the SSA Baby Names and US Census Surname datasets — filter by gender, length, character patterns, and popularity weighting
+- Generates *fictional character names* using a rule-based syllable chaining engine with style presets including elvish, nordic, and villainous
+- Generates *gaming usernames* with style presets including sweaty, clean, retro, and fantasy
+- Save favorites — bookmark generated names for later reference
+- Generation history — automatically logs every generation request for review
+- AI enhancement — optionally passes a name through OpenAI to generate lore blurbs, style variations, or cultural origins
+
+Tech Stack:
 
 - Language / Runtime: C# / .NET 8
 - Framework: ASP.NET Core Web API
