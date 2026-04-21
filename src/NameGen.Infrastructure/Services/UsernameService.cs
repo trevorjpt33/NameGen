@@ -12,6 +12,7 @@ public class UsernameService : IUsernameService
     {
         var requestedCount = Math.Min(request.Count, 25);
         var styleNormalized = request.Style.ToLower();
+        var weightedNormalized = request.Weighted.ToLower();
 
         var rng = request.Seed.HasValue
             ? new Random(request.Seed.Value)
@@ -35,7 +36,7 @@ public class UsernameService : IUsernameService
             var preset = UsernamePresets.Presets[styleKey];
 
             var username = BuildUsername(preset, styleKey, request.AllowNumbers,
-                request.AllowSymbols, rng);
+                request.AllowSymbols, weightedNormalized, rng);
 
             if (!PassesFilters(username, request.MinLength, request.MaxLength,
                 includes, excludes, startsWith, notStartsWith, endsWith, notEndsWith))
@@ -68,10 +69,11 @@ public class UsernameService : IUsernameService
         string styleKey,
         bool allowNumbers,
         bool allowSymbols,
+        string weighted,
         Random rng)
     {
-        var prefix = preset.Prefixes[rng.Next(preset.Prefixes.Count)];
-        var suffix = preset.Suffixes[rng.Next(preset.Suffixes.Count)];
+        var prefix = PickWeighted(preset.Prefixes, weighted, rng);
+        var suffix = PickWeighted(preset.Suffixes, weighted, rng);
         var core = prefix + suffix;
 
         // Sweaty style: wrap with xX...Xx when symbols allowed
@@ -83,6 +85,27 @@ public class UsernameService : IUsernameService
             core += rng.Next(10, 999).ToString();
 
         return core;
+    }
+
+    private static string PickWeighted(List<string> list, string weighted, Random rng)
+    {
+        if (list.Count == 0) return string.Empty;
+
+        if (weighted == "common")
+        {
+            int a = rng.Next(list.Count);
+            int b = rng.Next(list.Count);
+            return list[Math.Min(a, b)];
+        }
+
+        if (weighted == "rare")
+        {
+            int a = rng.Next(list.Count);
+            int b = rng.Next(list.Count);
+            return list[Math.Max(a, b)];
+        }
+
+        return list[rng.Next(list.Count)];
     }
 
     private static string ResolveStyle(string style, Random rng)
