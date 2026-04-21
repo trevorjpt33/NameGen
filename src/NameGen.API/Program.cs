@@ -1,12 +1,15 @@
 using Microsoft.EntityFrameworkCore;
+using NameGen.Core.Interfaces;
 using NameGen.Infrastructure.Data;
 using NameGen.Infrastructure.Data.Seed;
+using NameGen.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddScoped<IHumanNameService, HumanNameService>();
 
 var app = builder.Build();
 
