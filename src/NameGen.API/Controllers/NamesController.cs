@@ -14,6 +14,7 @@ public class NamesController : ControllerBase
     private readonly IHumanNameService _humanNameService;
     private readonly IFictionalNameService _fictionalNameService;
     private readonly IUsernameService _usernameService;
+    private readonly IGenerationHistoryService _historyService;
 
     /// <summary>
     /// Initializes a new instance of <see cref="NamesController"/>.
@@ -21,14 +22,17 @@ public class NamesController : ControllerBase
     /// <param name="humanNameService">The human name generation service.</param>
     /// <param name="fictionalNameService">The fictional name generation service.</param>
     /// <param name="usernameService">The gaming username generation service.</param>
+    /// <param name="historyService">The generation history logging service.</param>
     public NamesController(
         IHumanNameService humanNameService,
         IFictionalNameService fictionalNameService,
-        IUsernameService usernameService)
+        IUsernameService usernameService,
+        IGenerationHistoryService historyService)
     {
         _humanNameService = humanNameService;
         _fictionalNameService = fictionalNameService;
         _usernameService = usernameService;
+        _historyService = historyService;
     }
 
     /// <summary>
@@ -42,6 +46,7 @@ public class NamesController : ControllerBase
     public async Task<IActionResult> GetHumanNames([FromQuery] HumanNameRequest request)
     {
         var response = await _humanNameService.GenerateAsync(request);
+        await _historyService.LogAsync(GenerationType.Human, request, response.Count);
         return Ok(response);
     }
 
@@ -56,6 +61,7 @@ public class NamesController : ControllerBase
     public async Task<IActionResult> GetFictionalNames([FromQuery] FictionalNameRequest request)
     {
         var response = await _fictionalNameService.GenerateAsync(request);
+        await _historyService.LogAsync(GenerationType.Fictional, request, response.Count);
         return Ok(response);
     }
 
@@ -70,6 +76,7 @@ public class NamesController : ControllerBase
     public async Task<IActionResult> GetUsernames([FromQuery] UsernameRequest request)
     {
         var response = await _usernameService.GenerateAsync(request);
+        await _historyService.LogAsync(GenerationType.Username, request, response.Count);
         return Ok(response);
     }
 }

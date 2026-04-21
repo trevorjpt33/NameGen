@@ -15,6 +15,7 @@ builder.Services.AddScoped<IHumanNameService, HumanNameService>();
 builder.Services.AddScoped<IFictionalNameService, FictionalNameService>();
 builder.Services.AddScoped<IUsernameService, UsernameService>();
 builder.Services.AddScoped<IFavoritesService, FavoritesService>();
+builder.Services.AddScoped<IGenerationHistoryService, GenerationHistoryService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
 
     public DbSet<HumanName> HumanNames => Set<HumanName>();
     public DbSet<Favorite> Favorites => Set<Favorite>();
+    public DbSet<GenerationHistory> GenerationHistories => Set<GenerationHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -36,6 +37,19 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Type).IsRequired();
             entity.Property(e => e.Style).HasMaxLength(100);
             entity.Property(e => e.CreatedAt).IsRequired();
+        });
+
+        modelBuilder.Entity<GenerationHistory>(entity =>
+        {
+            entity.ToTable("generation_history");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Type).IsRequired();
+            entity.Property(e => e.ParametersJson).IsRequired();
+            entity.Property(e => e.ResultsJson).IsRequired();
+            entity.Property(e => e.ResultCount).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.HasIndex(e => e.Type);
+            entity.HasIndex(e => e.CreatedAt);
         });
     }
 }
