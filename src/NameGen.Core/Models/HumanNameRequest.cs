@@ -5,6 +5,8 @@ public class HumanNameRequest
     public string Type { get; set; } = "full";
     public string Gender { get; set; } = "neutral";
     public int Count { get; set; } = 5;
+    public int? Seed { get; set; }
+    public string Weighted { get; set; } = "none";
     public int? MinLength { get; set; }
     public int? MaxLength { get; set; }
     public int? MinFullLength { get; set; }

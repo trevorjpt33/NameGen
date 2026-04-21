@@ -10,9 +10,10 @@ public class FictionalNameService : IFictionalNameService
 
     public Task<FictionalNameResponse> GenerateAsync(FictionalNameRequest request)
     {
-        var requestedCount = Math.Min(request.Count, 25);
-        var styleNormalized = request.Style.ToLower();
-        var typeNormalized = request.Type.ToLower();
+        var requestedCount    = Math.Min(request.Count, 25);
+        var styleNormalized   = request.Style.ToLower();
+        var typeNormalized    = request.Type.ToLower();
+        var weightedNormalized = request.Weighted.ToLower();
 
         var rng = request.Seed.HasValue
             ? new Random(request.Seed.Value)
@@ -33,16 +34,16 @@ public class FictionalNameService : IFictionalNameService
             attempts++;
 
             var styleKey = ResolveStyle(styleNormalized, rng);
-            var preset = FictionalNamePresets.Presets[styleKey];
+            var preset   = FictionalNamePresets.Presets[styleKey];
 
             string? firstName = null;
-            string? lastName = null;
+            string? lastName  = null;
 
             if (typeNormalized != "last")
-                firstName = BuildName(preset, rng);
+                firstName = BuildName(preset, weightedNormalized, rng);
 
             if (typeNormalized != "first")
-                lastName = BuildName(preset, rng);
+                lastName = BuildName(preset, weightedNormalized, rng);
 
             if (firstName != null && !PassesFilters(firstName,
                 request.MinLength, request.MaxLength,
@@ -93,12 +94,46 @@ public class FictionalNameService : IFictionalNameService
         });
     }
 
-    private static string BuildName(StylePreset preset, Random rng)
+    /// <summary>
+    /// Builds a name by chaining a prefix, middle, and suffix from the preset.
+    /// weighted=common biases toward the front of each syllable list (more familiar sounds).
+    /// weighted=rare biases toward the back of each syllable list (more unusual sounds).
+    /// </summary>
+    private static string BuildName(StylePreset preset, string weighted, Random rng)
     {
-        var prefix = preset.Prefixes[rng.Next(preset.Prefixes.Count)];
-        var middle = preset.Middles[rng.Next(preset.Middles.Count)];
-        var suffix = preset.Suffixes[rng.Next(preset.Suffixes.Count)];
+        var prefix = PickWeighted(preset.Prefixes, weighted, rng);
+        var middle = PickWeighted(preset.Middles, weighted, rng);
+        var suffix = PickWeighted(preset.Suffixes, weighted, rng);
         return char.ToUpper(prefix[0]) + (prefix[1..] + middle + suffix).ToLower();
+    }
+
+    /// <summary>
+    /// Picks an item from a list using weighted index selection.
+    /// common: triangular distribution biased toward index 0.
+    /// rare:   triangular distribution biased toward the last index.
+    /// none:   uniform random.
+    /// </summary>
+    private static string PickWeighted(List<string> list, string weighted, Random rng)
+    {
+        if (list.Count == 0) return string.Empty;
+
+        if (weighted == "common")
+        {
+            // Take the minimum of two random indexes — biases toward lower indexes
+            int a = rng.Next(list.Count);
+            int b = rng.Next(list.Count);
+            return list[Math.Min(a, b)];
+        }
+
+        if (weighted == "rare")
+        {
+            // Take the maximum of two random indexes — biases toward higher indexes
+            int a = rng.Next(list.Count);
+            int b = rng.Next(list.Count);
+            return list[Math.Max(a, b)];
+        }
+
+        return list[rng.Next(list.Count)];
     }
 
     private static string ResolveStyle(string style, Random rng)

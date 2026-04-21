@@ -8,7 +8,6 @@ namespace NameGen.Infrastructure.Services;
 public class HumanNameService : IHumanNameService
 {
     private readonly AppDbContext _context;
-    private readonly Random _random = new();
 
     public HumanNameService(AppDbContext context)
     {
@@ -20,13 +19,18 @@ public class HumanNameService : IHumanNameService
         var requestedCount = Math.Min(request.Count, 25);
         var genderEnum = ParseGender(request.Gender);
         var typeNormalized = request.Type.ToLower();
+        var weightedNormalized = request.Weighted.ToLower();
 
-        var includes = SplitFilter(request.Includes);
-        var excludes = SplitFilter(request.Excludes);
-        var startsWith = SplitFilter(request.StartsWith);
+        var rng = request.Seed.HasValue
+            ? new Random(request.Seed.Value)
+            : new Random();
+
+        var includes      = SplitFilter(request.Includes);
+        var excludes      = SplitFilter(request.Excludes);
+        var startsWith    = SplitFilter(request.StartsWith);
         var notStartsWith = SplitFilter(request.NotStartsWith);
-        var endsWith = SplitFilter(request.EndsWith);
-        var notEndsWith = SplitFilter(request.NotEndsWith);
+        var endsWith      = SplitFilter(request.EndsWith);
+        var notEndsWith   = SplitFilter(request.NotEndsWith);
 
         var results = new List<HumanNameResult>();
 
@@ -38,8 +42,7 @@ public class HumanNameService : IHumanNameService
                 includes, excludes, startsWith, notStartsWith,
                 endsWith, notEndsWith);
 
-            results = lastNames
-                .OrderBy(_ => _random.Next())
+            results = WeightedShuffle(lastNames, weightedNormalized, rng)
                 .Take(requestedCount)
                 .Select(n => new HumanNameResult { LastName = n.Name })
                 .ToList();
@@ -52,13 +55,12 @@ public class HumanNameService : IHumanNameService
                 includes, excludes, startsWith, notStartsWith,
                 endsWith, notEndsWith);
 
-            results = firstNames
-                .OrderBy(_ => _random.Next())
+            results = WeightedShuffle(firstNames, weightedNormalized, rng)
                 .Take(requestedCount)
                 .Select(n => new HumanNameResult
                 {
                     FirstName = n.Name,
-                    Gender = n.Gender.ToString().ToLower()
+                    Gender    = n.Gender.ToString().ToLower()
                 })
                 .ToList();
         }
@@ -76,8 +78,8 @@ public class HumanNameService : IHumanNameService
                 includes, excludes, startsWith, notStartsWith,
                 endsWith, notEndsWith);
 
-            var shuffledFirst = firstNames.OrderBy(_ => _random.Next()).ToList();
-            var shuffledLast = lastNames.OrderBy(_ => _random.Next()).ToList();
+            var shuffledFirst = WeightedShuffle(firstNames, weightedNormalized, rng).ToList();
+            var shuffledLast  = WeightedShuffle(lastNames, weightedNormalized, rng).ToList();
 
             int count = Math.Min(requestedCount,
                 Math.Min(shuffledFirst.Count, shuffledLast.Count));
@@ -85,17 +87,16 @@ public class HumanNameService : IHumanNameService
             for (int i = 0; i < count; i++)
             {
                 var first = shuffledFirst[i];
-                var last = shuffledLast[i];
+                var last  = shuffledLast[i];
                 results.Add(new HumanNameResult
                 {
                     FirstName = first.Name,
-                    LastName = last.Name,
-                    FullName = $"{first.Name} {last.Name}",
-                    Gender = first.Gender.ToString().ToLower()
+                    LastName  = last.Name,
+                    FullName  = $"{first.Name} {last.Name}",
+                    Gender    = first.Gender.ToString().ToLower()
                 });
             }
 
-            // Apply full name length filters
             if (request.MinFullLength.HasValue)
                 results = results
                     .Where(r => r.FullName!.Length >= request.MinFullLength.Value)
@@ -114,13 +115,36 @@ public class HumanNameService : IHumanNameService
 
         return new HumanNameResponse
         {
-            Count = results.Count,
-            Type = typeNormalized,
-            Gender = request.Gender.ToLower(),
-            Results = results,
+            Count          = results.Count,
+            Type           = typeNormalized,
+            Gender         = request.Gender.ToLower(),
+            Results        = results,
             FiltersApplied = request,
-            Warning = warning
+            Warning        = warning
         };
+    }
+
+    /// <summary>
+    /// Orders a name list by popularity weighting.
+    /// weighted=common: lower rank numbers (more popular) appear first.
+    /// weighted=rare:   higher rank numbers (less popular) appear first.
+    /// weighted=none:   pure random shuffle.
+    /// Names with null popularity are assigned a neutral middle rank.
+    /// </summary>
+    private static IEnumerable<HumanName> WeightedShuffle(
+        List<HumanName> names,
+        string weighted,
+        Random rng)
+    {
+        if (weighted == "common")
+            return names.OrderBy(n => n.Popularity ?? 50000)
+                        .ThenBy(_ => rng.Next());
+
+        if (weighted == "rare")
+            return names.OrderByDescending(n => n.Popularity ?? 50000)
+                        .ThenBy(_ => rng.Next());
+
+        return names.OrderBy(_ => rng.Next());
     }
 
     private async Task<List<HumanName>> QueryNamesAsync(
@@ -150,7 +174,6 @@ public class HumanNameService : IHumanNameService
 
         var nameList = await query.ToListAsync();
 
-        // Apply in-memory filters for string pattern matching
         if (includes.Any())
             nameList = nameList.Where(n =>
                 includes.Any(v => n.Name.Contains(v,
@@ -187,9 +210,9 @@ public class HumanNameService : IHumanNameService
     private static Gender ParseGender(string gender) =>
         gender.ToLower() switch
         {
-            "male" => Gender.Male,
+            "male"   => Gender.Male,
             "female" => Gender.Female,
-            _ => Gender.Neutral
+            _        => Gender.Neutral
         };
 
     private static List<string> SplitFilter(string? value) =>

@@ -87,6 +87,10 @@ public static class NameSeeder
 
             foreach (var record in records)
             {
+                // Skip Census dataset annotations (e.g. "All other names")
+                if (record.Name.Contains(' '))
+                    continue;
+                    
                 names.Add(new HumanName
                 {
                     Name = char.ToUpper(record.Name[0]) + record.Name.Substring(1).ToLower(),
