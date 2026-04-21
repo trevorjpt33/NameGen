@@ -1,6 +1,9 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using NameGen.Core.Interfaces;
+using NameGen.Core.Validators;
 using NameGen.Infrastructure.Data;
 using NameGen.Infrastructure.Data.Seed;
 using NameGen.Infrastructure.Services;
@@ -9,8 +12,12 @@ using System.Reflection;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<HumanNameRequestValidator>();
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 builder.Services.AddScoped<IHumanNameService, HumanNameService>();
 builder.Services.AddScoped<IFictionalNameService, FictionalNameService>();
 builder.Services.AddScoped<IUsernameService, UsernameService>();
