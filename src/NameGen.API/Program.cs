@@ -13,6 +13,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IHumanNameService, HumanNameService>();
 builder.Services.AddScoped<IFictionalNameService, FictionalNameService>();
+builder.Services.AddScoped<IUsernameService, UsernameService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

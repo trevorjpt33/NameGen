@@ -13,18 +13,22 @@ public class NamesController : ControllerBase
 {
     private readonly IHumanNameService _humanNameService;
     private readonly IFictionalNameService _fictionalNameService;
+    private readonly IUsernameService _usernameService;
 
     /// <summary>
     /// Initializes a new instance of <see cref="NamesController"/>.
     /// </summary>
     /// <param name="humanNameService">The human name generation service.</param>
     /// <param name="fictionalNameService">The fictional name generation service.</param>
+    /// <param name="usernameService">The gaming username generation service.</param>
     public NamesController(
         IHumanNameService humanNameService,
-        IFictionalNameService fictionalNameService)
+        IFictionalNameService fictionalNameService,
+        IUsernameService usernameService)
     {
         _humanNameService = humanNameService;
         _fictionalNameService = fictionalNameService;
+        _usernameService = usernameService;
     }
 
     /// <summary>
@@ -52,6 +56,20 @@ public class NamesController : ControllerBase
     public async Task<IActionResult> GetFictionalNames([FromQuery] FictionalNameRequest request)
     {
         var response = await _fictionalNameService.GenerateAsync(request);
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Generates gaming usernames using style presets.
+    /// </summary>
+    /// <param name="request">Filter parameters for username generation.</param>
+    /// <returns>A list of generated usernames matching the specified filters.</returns>
+    [HttpGet("username")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetUsernames([FromQuery] UsernameRequest request)
+    {
+        var response = await _usernameService.GenerateAsync(request);
         return Ok(response);
     }
 }
