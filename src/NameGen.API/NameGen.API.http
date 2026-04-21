@@ -1,0 +1,6 @@
+@NameGen.API_HostAddress = http://localhost:5260
+
+GET {{NameGen.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
