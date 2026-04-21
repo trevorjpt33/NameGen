@@ -14,6 +14,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IHumanNameService, HumanNameService>();
 builder.Services.AddScoped<IFictionalNameService, FictionalNameService>();
 builder.Services.AddScoped<IUsernameService, UsernameService>();
+builder.Services.AddScoped<IFavoritesService, FavoritesService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
