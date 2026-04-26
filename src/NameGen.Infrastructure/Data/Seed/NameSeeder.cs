@@ -16,6 +16,12 @@ public static class NameSeeder
             return;
         }
 
+        if (!Directory.Exists(csvFolderPath))
+        {
+            Console.WriteLine($"CSV path not found: {csvFolderPath} — skipping seed.");
+            return;
+        }
+
         var names = new List<HumanName>();
 
         // --- Seed first names from SSA data ---
