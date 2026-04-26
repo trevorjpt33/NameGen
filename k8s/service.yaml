@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: namegen-api
+  namespace: namegen
+  labels:
+    app: namegen-api
+spec:
+  type: ClusterIP
+  selector:
+    app: namegen-api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080
