@@ -12,8 +12,20 @@ using System.Reflection;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("BlazorDev", policy =>
+    {
+        policy.WithOrigins("http://localhost:5201")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<HumanNameRequestValidator>();
+
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -64,6 +76,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseCors("BlazorDev");
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();

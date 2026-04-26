@@ -1,7 +1,286 @@
 ﻿@page "/"
+@inject ApiService ApiService
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
 
-<PageTitle>Home</PageTitle>
+<PageTitle>NameGen — Generator</PageTitle>
 
-<h1>Hello, world!</h1>
+<MudText Typo="Typo.h4" Class="mb-6" Style="color: #3F51B5; font-weight: 700;">
+    Name Generator
+</MudText>
 
-Welcome to your new app.
+<!-- ───────────────────────── FORM ───────────────────────── -->
+<MudPaper Elevation="2" Class="pa-6 mb-8">
+    <MudGrid>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudSelect T="string" Label="Generation Type"
+                    Value="_genType"
+                    ValueChanged="OnGenTypeChanged"
+                    Variant="Variant.Outlined" FullWidth="true">
+                <MudSelectItem Value="@("human")">Human</MudSelectItem>
+                <MudSelectItem Value="@("fictional")">Fictional</MudSelectItem>
+                <MudSelectItem Value="@("username")">Username</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+
+        @if (_genType == "human")
+        {
+            <MudItem xs="12" sm="6" md="3">
+                <MudSelect T="string" Label="Gender" @bind-Value="_gender"
+                           Variant="Variant.Outlined" FullWidth="true">
+                    <MudSelectItem Value="@("neutral")">Neutral</MudSelectItem>
+                    <MudSelectItem Value="@("male")">Male</MudSelectItem>
+                    <MudSelectItem Value="@("female")">Female</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudSelect T="string" Label="Name Type" @bind-Value="_nameType"
+                           Variant="Variant.Outlined" FullWidth="true">
+                    <MudSelectItem Value="@("full")">Full Name</MudSelectItem>
+                    <MudSelectItem Value="@("first")">First Only</MudSelectItem>
+                    <MudSelectItem Value="@("last")">Last Only</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        }
+
+        @if (_genType == "fictional")
+        {
+            <MudItem xs="12" sm="6" md="3">
+                <MudSelect T="string" Label="Style" @bind-Value="_style"
+                           Variant="Variant.Outlined" FullWidth="true">
+                    <MudSelectItem Value="@("random")">Random</MudSelectItem>
+                    <MudSelectItem Value="@("elvish")">Elvish</MudSelectItem>
+                    <MudSelectItem Value="@("nordic")">Nordic</MudSelectItem>
+                    <MudSelectItem Value="@("villainous")">Villainous</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudSelect T="string" Label="Name Type" @bind-Value="_nameType"
+                           Variant="Variant.Outlined" FullWidth="true">
+                    <MudSelectItem Value="@("full")">Full Name</MudSelectItem>
+                    <MudSelectItem Value="@("first")">First Only</MudSelectItem>
+                    <MudSelectItem Value="@("last")">Last Only</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        }
+
+        @if (_genType == "username")
+        {
+            <MudItem xs="12" sm="6" md="3">
+                <MudSelect T="string" Label="Style" @bind-Value="_style"
+                           Variant="Variant.Outlined" FullWidth="true">
+                    <MudSelectItem Value="@("random")">Random</MudSelectItem>
+                    <MudSelectItem Value="@("sweaty")">Sweaty</MudSelectItem>
+                    <MudSelectItem Value="@("clean")">Clean</MudSelectItem>
+                    <MudSelectItem Value="@("retro")">Retro</MudSelectItem>
+                    <MudSelectItem Value="@("fantasy")">Fantasy</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        }
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudSelect T="int" Label="Count" @bind-Value="_count"
+                       Variant="Variant.Outlined" FullWidth="true">
+                <MudSelectItem Value="1">1</MudSelectItem>
+                <MudSelectItem Value="5">5</MudSelectItem>
+                <MudSelectItem Value="10">10</MudSelectItem>
+                <MudSelectItem Value="25">25</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+
+        <MudItem xs="12" Class="d-flex align-center">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Size="Size.Large"
+                       StartIcon="@Icons.Material.Filled.AutoAwesome"
+                       OnClick="GenerateAsync"
+                       Disabled="_loading">
+                @if (_loading)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    <span>Generating...</span>
+                }
+                else
+                {
+                    <span>Generate</span>
+                }
+            </MudButton>
+        </MudItem>
+
+    </MudGrid>
+</MudPaper>
+
+<!-- ───────────────────────── RESULTS ───────────────────────── -->
+@if (_results.Count > 0)
+{
+    <MudPaper Elevation="3" Class="pa-8 text-center">
+
+        @if (!string.IsNullOrEmpty(_warning))
+        {
+            <MudAlert Severity="Severity.Warning" Class="mb-4">@_warning</MudAlert>
+        }
+
+        <MudText Typo="Typo.caption" Style="color: #9E9E9E;" Class="mb-2">
+            @(_index + 1) of @_results.Count
+        </MudText>
+
+        <MudText Typo="Typo.h2" Style="font-weight: 800; color: #1E1B4B; letter-spacing: 1px;"
+                 Class="mb-6">
+            @_results[_index]
+        </MudText>
+
+        <!-- Navigation -->
+        <div class="d-flex justify-center align-center gap-4 mb-6">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBackIos"
+                           Color="Color.Primary"
+                           Size="Size.Large"
+                           Disabled="_index <= 0"
+                           OnClick="Previous" />
+
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowForwardIos"
+                           Color="Color.Primary"
+                           Size="Size.Large"
+                           Disabled="_index >= _results.Count - 1"
+                           OnClick="Next" />
+        </div>
+
+        <!-- Actions -->
+        <div class="d-flex justify-center gap-3">
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.ContentCopy"
+                       OnClick="CopyAsync">
+                Copy
+            </MudButton>
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Secondary"
+                       StartIcon="@Icons.Material.Filled.Favorite"
+                       OnClick="SaveFavoriteAsync">
+                Save to Favorites
+            </MudButton>
+        </div>
+
+    </MudPaper>
+}
+else if (_hasGenerated)
+{
+    <MudAlert Severity="Severity.Info">
+        No results returned. Try adjusting your filters.
+    </MudAlert>
+}
+
+@code {
+    private string _genType  = "human";
+    private string _gender   = "neutral";
+    private string _nameType = "full";
+    private string _style    = "random";
+    private int    _count    = 5;
+
+    private List<string> _results = new();
+    private int    _index        = 0;
+    private bool   _loading      = false;
+    private bool   _hasGenerated = false;
+    private string? _warning;
+
+    private void OnGenTypeChanged(string value)
+    {
+        _genType  = value;
+        _nameType = "full";
+        _style    = "random";
+        _gender   = "neutral";
+        _results  = new();
+        _hasGenerated = false;
+        _warning  = null;
+    }
+
+    private async Task GenerateAsync()
+    {
+        _loading      = true;
+        _hasGenerated = false;
+        _warning      = null;
+        _results      = new();
+        _index        = 0;
+
+        try
+        {
+            if (_genType == "human")
+            {
+                var response = await ApiService.GetHumanNamesAsync(
+                    _nameType, _gender, _count);
+
+                if (response is not null)
+                {
+                    _results = response.Results
+                        .Select(r => r.FullName ?? r.FirstName ?? r.LastName ?? "")
+                        .Where(n => !string.IsNullOrEmpty(n))
+                        .ToList();
+                    _warning = response.Warning;
+                }
+            }
+            else if (_genType == "fictional")
+            {
+                var response = await ApiService.GetFictionalNamesAsync(
+                    _style, _nameType, _count);
+
+                if (response is not null)
+                {
+                    _results = response.Results
+                        .Select(r => r.FullName ?? r.FirstName ?? r.LastName ?? "")
+                        .Where(n => !string.IsNullOrEmpty(n))
+                        .ToList();
+                    _warning = response.Warning;
+                }
+            }
+            else if (_genType == "username")
+            {
+                var response = await ApiService.GetUsernamesAsync(
+                    _style, _count);
+
+                if (response is not null)
+                {
+                    _results = response.Results
+                        .Select(r => r.Username)
+                        .Where(n => !string.IsNullOrEmpty(n))
+                        .ToList();
+                    _warning = response.Warning;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error contacting API: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading      = false;
+            _hasGenerated = true;
+        }
+    }
+
+    private void Previous() => _index = Math.Max(0, _index - 1);
+    private void Next()     => _index = Math.Min(_results.Count - 1, _index + 1);
+
+    private async Task CopyAsync()
+    {
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", _results[_index]);
+        Snackbar.Add("Copied to clipboard!", Severity.Success);
+    }
+
+    private async Task SaveFavoriteAsync()
+    {
+        var name   = _results[_index];
+        var gender = _genType == "human" ? _gender : null;
+        var style  = _genType != "human" ? _style  : null;
+
+        var success = await ApiService.SaveFavoriteAsync(name, _genType, gender, style);
+
+        if (success)
+            Snackbar.Add($"\"{name}\" saved to favorites!", Severity.Success);
+        else
+            Snackbar.Add("Failed to save favorite. Is the API running?", Severity.Error);
+    }
+}
