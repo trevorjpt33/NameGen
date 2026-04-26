@@ -113,6 +113,22 @@ public class ApiService
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<bool> DeleteFavoriteAsync(int id)
+    {
+        var response = await _http.DeleteAsync($"api/v1/favorites/{id}");
+        return response.IsSuccessStatusCode;
+    }
+
+    // -------------------------------------------------------------------------
+    // History
+    // -------------------------------------------------------------------------
+
+    public async Task<GenerationHistoryApiResponse?> GetHistoryAsync(int limit = 20)
+    {
+        return await _http.GetFromJsonAsync<GenerationHistoryApiResponse>(
+            $"api/v1/history?limit={limit}", JsonOptions);
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
@@ -196,5 +212,19 @@ public class FavoriteApiResult
     public string Type { get; set; } = string.Empty;
     public string? Gender { get; set; }
     public string? Style { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+public class GenerationHistoryApiResponse
+{
+    public int Count { get; set; }
+    public List<GenerationHistoryApiResult> Results { get; set; } = new();
+}
+
+public class GenerationHistoryApiResult
+{
+    public int Id { get; set; }
+    public string Type { get; set; } = string.Empty;
+    public int ResultCount { get; set; }
     public DateTime CreatedAt { get; set; }
 }

@@ -1,0 +1,98 @@
+@page "/history"
+@inject ApiService ApiService
+@inject ISnackbar Snackbar
+
+<PageTitle>NameGen — History</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-6" Style="color: #3F51B5; font-weight: 700;">
+    Generation History
+</MudText>
+
+<MudPaper Elevation="2" Class="pa-4 mb-4">
+    <MudGrid>
+        <MudItem xs="12" sm="4" md="3">
+            <MudSelect T="int" Label="Show"
+                       Value="_limit"
+                       ValueChanged="OnLimitChanged"
+                       Variant="Variant.Outlined" FullWidth="true">
+                <MudSelectItem Value="20">Last 20</MudSelectItem>
+                <MudSelectItem Value="50">Last 50</MudSelectItem>
+                <MudSelectItem Value="100">Last 100</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+}
+else if (_history.Count == 0)
+{
+    <MudAlert Severity="Severity.Info">
+        No generation history yet. Generate some names to get started!
+    </MudAlert>
+}
+else
+{
+    <MudTable Items="_history" Hover="true" Striped="true" Elevation="2">
+        <HeaderContent>
+            <MudTh>Type</MudTh>
+            <MudTh>Names Generated</MudTh>
+            <MudTh>Date</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>
+                <MudChip T="string" Size="Size.Small" Color="TypeColor(context.Type)">
+                    @context.Type
+                </MudChip>
+            </MudTd>
+            <MudTd>@context.ResultCount</MudTd>
+            <MudTd>
+                @context.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<GenerationHistoryApiResult> _history = new();
+    private bool _loading = true;
+    private int _limit = 20;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadHistoryAsync();
+    }
+
+    private async Task OnLimitChanged(int value)
+    {
+        _limit = value;
+        await LoadHistoryAsync();
+    }
+
+    private async Task LoadHistoryAsync()
+    {
+        _loading = true;
+        try
+        {
+            var response = await ApiService.GetHistoryAsync(_limit);
+            _history = response?.Results ?? new();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading history: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private Color TypeColor(string type) => type.ToLower() switch
+    {
+        "fictional" => Color.Secondary,
+        "username"  => Color.Warning,
+        _           => Color.Primary
+    };
+}

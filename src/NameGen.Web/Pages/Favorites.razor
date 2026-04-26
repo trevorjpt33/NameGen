@@ -1,0 +1,132 @@
+@page "/favorites"
+@inject ApiService ApiService
+@inject ISnackbar Snackbar
+
+<PageTitle>NameGen — Favorites</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-6" Style="color: #3F51B5; font-weight: 700;">
+    Favorites
+</MudText>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+}
+else if (_favorites.Count == 0)
+{
+    <MudAlert Severity="Severity.Info">
+        No favorites saved yet. Generate some names and hit Save to Favorites!
+    </MudAlert>
+}
+else
+{
+    <MudPaper Elevation="2" Class="pa-4 mb-4">
+        <MudSelect T="string" Label="Filter by Type"
+                   Value="_typeFilter"
+                   ValueChanged="OnFilterChanged"
+                   Variant="Variant.Outlined"
+                   Style="max-width: 220px;">
+            <MudSelectItem Value="@("all")">All</MudSelectItem>
+            <MudSelectItem Value="@("human")">Human</MudSelectItem>
+            <MudSelectItem Value="@("fictional")">Fictional</MudSelectItem>
+            <MudSelectItem Value="@("username")">Username</MudSelectItem>
+        </MudSelect>
+    </MudPaper>
+
+    <MudTable Items="FilteredFavorites" Hover="true" Striped="true" Elevation="2">
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Type</MudTh>
+            <MudTh>Style / Gender</MudTh>
+            <MudTh>Saved</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>
+                <MudText Style="font-weight: 600;">@context.Name</MudText>
+            </MudTd>
+            <MudTd>
+                <MudChip T="string" Value="@context.Type" Size="Size.Small" Color="TypeColor(context.Type)">
+                    @context.Type
+                </MudChip>
+            </MudTd>
+            <MudTd>
+                @(context.Style ?? context.Gender ?? "—")
+            </MudTd>
+            <MudTd>
+                @context.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")
+            </MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                               Color="Color.Error"
+                               Size="Size.Small"
+                               OnClick="@(() => DeleteAsync(context.Id))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<FavoriteApiResult> _favorites = new();
+    private bool _loading = true;
+    private string _typeFilter = "all";
+
+    private IEnumerable<FavoriteApiResult> FilteredFavorites
+    {
+        get
+        {
+            return _typeFilter == "all"
+                ? _favorites
+                : _favorites.Where(f => f.Type.ToLower() == _typeFilter);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFavoritesAsync();
+    }
+
+    private void OnFilterChanged(string value)
+    {
+        _typeFilter = value;
+    }
+
+    private async Task LoadFavoritesAsync()
+    {
+        _loading = true;
+        try
+        {
+            var response = await ApiService.GetFavoritesAsync();
+            _favorites = response?.Results ?? new();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading favorites: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task DeleteAsync(int id)
+    {
+        var success = await ApiService.DeleteFavoriteAsync(id);
+        if (success)
+        {
+            _favorites.RemoveAll(f => f.Id == id);
+            Snackbar.Add("Favorite removed.", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add("Failed to remove favorite.", Severity.Error);
+        }
+    }
+
+    private Color TypeColor(string type) => type.ToLower() switch
+    {
+        "fictional" => Color.Secondary,
+        "username"  => Color.Warning,
+        _           => Color.Primary
+    };
+}
