@@ -8,9 +8,12 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"]
+    ?? "http://localhost:5260";
+
 builder.Services.AddScoped(sp => new HttpClient
 {
-    BaseAddress = new Uri("http://localhost:5260")
+    BaseAddress = new Uri(apiBaseUrl)
 });
 
 builder.Services.AddMudServices();

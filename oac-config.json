@@ -1,0 +1,7 @@
+{
+    "Name": "namegen-oac",
+    "Description": "NameGen Frontend OAC",
+    "SigningProtocol": "sigv4",
+    "SigningBehavior": "always",
+    "OriginAccessControlOriginType": "s3"
+}

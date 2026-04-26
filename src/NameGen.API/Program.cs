@@ -17,9 +17,11 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("BlazorDev", policy =>
     {
-        policy.WithOrigins("http://localhost:5201")
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        policy.WithOrigins(
+            "http://localhost:5201",
+            "https://d3ghy3wsrcikfp.cloudfront.net")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
     });
 });
 
