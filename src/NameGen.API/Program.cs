@@ -7,11 +7,17 @@ using NameGen.Core.Validators;
 using NameGen.Infrastructure.Data;
 using NameGen.Infrastructure.Data.Seed;
 using NameGen.Infrastructure.Services;
+using Serilog;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Host.UseSerilog((context, services, configuration) =>
+    configuration.ReadFrom.Configuration(context.Configuration));
+
 builder.Services.AddControllers();
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<HumanNameRequestValidator>();
 
 builder.Services.AddCors(options =>
 {
@@ -20,14 +26,10 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
             "http://localhost:5201",
             "https://d3ghy3wsrcikfp.cloudfront.net")
-            .AllowAnyHeader()
-            .AllowAnyMethod();
+              .AllowAnyHeader()
+              .AllowAnyMethod();
     });
 });
-
-builder.Services.AddFluentValidationAutoValidation();
-builder.Services.AddValidatorsFromAssemblyContaining<HumanNameRequestValidator>();
-
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -55,7 +57,6 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-// Apply migrations and seed on startup
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -78,6 +79,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseSerilogRequestLogging();
 app.UseCors("BlazorDev");
 app.UseHttpsRedirection();
 app.UseAuthorization();
